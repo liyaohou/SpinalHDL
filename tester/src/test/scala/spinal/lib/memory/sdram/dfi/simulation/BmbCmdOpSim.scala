@@ -22,7 +22,9 @@ object BmbCmdOpSim {
       FAW = 35
     )
     val sdram = SdramConfig(
-      SdramGeneration.MYDDR,
+      SdramGeneration.DDR3,
+      bgWidth = 0,
+      cidWidth = 0,
       bankWidth = 3,
       columnWidth = 10,
       rowWidth = 15,
@@ -30,8 +32,8 @@ object BmbCmdOpSim {
       ddrMHZ = 100,
       ddrWrLat = 4,
       ddrRdLat = 4,
-      sdramtime = sdramtime
-    )
+      sdramTime = sdramtime
+      )
     val timeConfig = DfiTimeConfig(
       tPhyWrLat = sdram.tPhyWrlat,
       tPhyWrData = 0,
@@ -45,8 +47,6 @@ object BmbCmdOpSim {
     val dfiConfig: DfiConfig = DfiConfig(
       frequencyRatio = 1,
       chipSelectNumber = 1,
-      bgWidth = 0,
-      cidWidth = 0,
       dataSlice = 1,
       cmdPhase = 0,
       signalConfig = new DDRSignalConfig(),

@@ -27,7 +27,9 @@ case class Bmb2DfiSim(x: Int) extends Component {
     FAW = 35
   )
   val sdram = SdramConfig(
-    SdramGeneration.MYDDR,
+    SdramGeneration.DDR3,
+    bgWidth = 0,
+    cidWidth = 0,
     bankWidth = 3,
     columnWidth = 10,
     rowWidth = 15,
@@ -35,8 +37,8 @@ case class Bmb2DfiSim(x: Int) extends Component {
     ddrMHZ = 100,
     ddrWrLat = 6,
     ddrRdLat = 6,
-    sdramtime = sdramtime
-  )
+    sdramTime = sdramtime
+    )
   val timeConfig = DfiTimeConfig(
     tPhyWrLat = sdram.tPhyWrlat,
     tPhyWrData = 0,
@@ -50,8 +52,6 @@ case class Bmb2DfiSim(x: Int) extends Component {
   val dfiConfig: DfiConfig = DfiConfig(
     frequencyRatio = 1,
     chipSelectNumber = 2,
-    bgWidth = 0,
-    cidWidth = 0,
     dataSlice = 1,
     cmdPhase = 0,
     signalConfig = new DDRSignalConfig(),
@@ -70,7 +70,7 @@ case class Bmb2DfiSim(x: Int) extends Component {
     val bmb = slave(Bmb(bmbp))
     val dfi = master(Dfi(dfiConfig))
   }
-  val bmb2dfi = DfiController(bmbp, task, dfiConfig)
+  val bmb2dfi = DfiController(bmbp, task, dfiConfig,RowBankColumn)
   bmb2dfi.io.bmb <> io.bmb
   bmb2dfi.io.dfi <> io.dfi
 }

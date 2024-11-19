@@ -31,7 +31,9 @@ class DfiControllerTester extends SpinalAnyFunSuite {
           FAW = 35
           )
         val sdram = SdramConfig(
-          SdramGeneration.MYDDR,
+          SdramGeneration.DDR3,
+          bgWidth = 0,
+          cidWidth = 0,
           bankWidth = 3,
           columnWidth = 10,
           rowWidth = 15,
@@ -39,7 +41,7 @@ class DfiControllerTester extends SpinalAnyFunSuite {
           ddrMHZ = 200,
           ddrWrLat = 4,
           ddrRdLat = 4,
-          sdramtime = sdramtime
+          sdramTime = sdramtime
           )
         val timeConfig = DfiTimeConfig(
           tPhyWrLat = sdram.tPhyWrlat,
@@ -54,8 +56,6 @@ class DfiControllerTester extends SpinalAnyFunSuite {
         val dfiConfig: DfiConfig = DfiConfig(
           frequencyRatio = 2,
           chipSelectNumber = 2,
-          bgWidth = 0,
-          cidWidth = 0,
           dataSlice = 1,
           cmdPhase = 0,
           signalConfig = new DDRSignalConfig(),
@@ -70,7 +70,7 @@ class DfiControllerTester extends SpinalAnyFunSuite {
           lengthWidth = 10,
           alignment = BmbParameter.BurstAlignement.WORD
           )
-        val dut = DfiController(bmbp, task, dfiConfig)
+        val dut = DfiController(bmbp, task, dfiConfig, RowBankColumn)
         dut
       }
       .doSimUntilVoid { dut =>   

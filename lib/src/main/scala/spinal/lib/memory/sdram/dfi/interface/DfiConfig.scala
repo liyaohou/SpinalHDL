@@ -276,18 +276,14 @@ class DDRSignalConfig(
   def useErrorInfo = kind.useErrorInfo & useErrorSignals
 }
 
-
 class AddrMap {}
 object RowBankColumn extends AddrMap
 object BankRowColumn extends AddrMap
 object RowColumnBank extends AddrMap
 
 case class DfiConfig(
-    addrMap: AddrMap = RowBankColumn,
     frequencyRatio: Int, // PHY:MC
     chipSelectNumber: Int,
-    bgWidth: Int,
-    cidWidth: Int,
     dataSlice: Int,
     cmdPhase: Int,
     signalConfig: DDRSignalConfig,
@@ -367,8 +363,8 @@ case class DfiConfig(
   val bankWidth = sdram.bankWidth
 
   val controlWidth = 1
-  val bankGroupWidth = bgWidth
-  val chipIdWidth = cidWidth
+  val bankGroupWidth = sdram.bgWidth
+  val chipIdWidth = sdram.cidWidth
   val dataEnableWidth = dataWidth / dataSlice
   val chipSelectWidth = log2Up(chipSelectNumber)
   val taskAddressWidth = sdram.byteAddressWidth + chipSelectWidth

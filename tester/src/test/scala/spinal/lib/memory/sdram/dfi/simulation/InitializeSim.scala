@@ -25,7 +25,9 @@ case class InitializeSim() extends Component {
     FAW = 35
   )
   val sdram = SdramConfig(
-    SdramGeneration.MYDDR,
+    SdramGeneration.DDR3,
+    bgWidth = 0,
+    cidWidth = 0,
     bankWidth = 3,
     columnWidth = 10,
     rowWidth = 15,
@@ -33,8 +35,8 @@ case class InitializeSim() extends Component {
     ddrMHZ = 100,
     ddrWrLat = 4,
     ddrRdLat = 4,
-    sdramtime = sdramtime
-  )
+    sdramTime = sdramtime
+    )
   val timeConfig = DfiTimeConfig(
     tPhyWrLat = 1,
     tPhyWrData = 2,
@@ -48,8 +50,6 @@ case class InitializeSim() extends Component {
   val dfiConfig: DfiConfig = DfiConfig(
     frequencyRatio = 1,
     chipSelectNumber = 1,
-    bgWidth = 0,
-    cidWidth = 0,
     dataSlice = 1,
     cmdPhase = 0,
     signalConfig = {
