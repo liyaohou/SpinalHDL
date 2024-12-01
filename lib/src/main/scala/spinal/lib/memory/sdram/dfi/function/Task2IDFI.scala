@@ -120,10 +120,10 @@ case class RdDataRxd(taskConfig: TaskConfig, dfiConfig: DfiConfig) extends Compo
 
     val output = Flow(Fragment(PipelineRsp()))
     output.valid.clear()
-    output.valid.setWhen(io.idfiRdData.map(_.valid).orR)
+    output.valid.setWhen(cmd.valid && cmd.write && cmd.last || io.idfiRdData.map(_.valid).orR)
     output.context := cmd.context
-    output.last := beatCounter.willOverflowIfInc && cmd.last
-    cmd.ready := beatCounter.willOverflow
+    output.last := cmd.write || beatCounter.willOverflowIfInc && cmd.last
+    cmd.ready := cmd.write || beatCounter.willOverflow
 
     for ((outputData, phase) <- (output.data.subdivideIn(frequencyRatio slices).reverse, io.idfiRdData).zipped) {
       outputData := B(phase.rdData)
@@ -133,6 +133,7 @@ case class RdDataRxd(taskConfig: TaskConfig, dfiConfig: DfiConfig) extends Compo
   val ready = Vec(Reg(Bool()), frequencyRatio)
 
   rspPipeline.input.valid := False
+  rspPipeline.input.write.assignDontCare()
   rspPipeline.input.last := io.task.last
   rspPipeline.input.context := io.task.context
 
@@ -145,10 +146,12 @@ case class RdDataRxd(taskConfig: TaskConfig, dfiConfig: DfiConfig) extends Compo
   if (io.taskRdData.taskConfig.canRead) io.taskRdData.data := rspPop.data
   io.taskRdData.context := rspPop.context.resized
 
-  rspPipeline.input.valid.setWhen(io.task.read)
+  rspPipeline.input.valid.setWhen(io.task.read | io.task.write)
+  rspPipeline.input.write.setWhen(io.task.write).clearWhen(io.task.read)
 
   case class Context() extends Bundle {
     val context = Bits(contextWidth bits)
+    val write = Bool()
   }
   ready.foreach(_.init(False))
   for (i <- 0 until (frequencyRatio)) {

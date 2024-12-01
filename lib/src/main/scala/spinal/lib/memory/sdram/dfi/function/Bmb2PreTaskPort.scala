@@ -13,7 +13,7 @@ case class BmbToPreTaskPort(ip: BmbParameter, taskConfig: TaskConfig, dfiConfig:
     val inputBurstLast = in Bool ()
     val output = master(PreTaskPort(taskConfig, dfiConfig))
   }
-  val cmdToRspCount = io.output.cmd.write ? U(0) | (io.output.cmd.length +^ 1) << log2Up(beatCount)
+  val cmdToRspCount = io.output.cmd.write ? U(1) | (io.output.cmd.length +^ 1) << log2Up(beatCount)
   val rspPendingCounter = Reg(UInt(log2Up(taskParameter.rspBufferSize + 1) bits)) init (0)
   val toManyRsp =
     (U"0" @@ rspPendingCounter) + cmdToRspCount > taskParameter.rspBufferSize // taskParameter.rspBufferSize - taskParameter.beatPerBurst*dfiConfig.beatCount //Pessimistic
