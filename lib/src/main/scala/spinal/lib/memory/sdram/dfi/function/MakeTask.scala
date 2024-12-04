@@ -181,7 +181,7 @@ case class MakeTask(taskConfig: TaskConfig, dfiConfig: DfiConfig, addrMap: AddrM
       station.context := taskConstructor.input.context
       station.offset := offset
       station.offsetLast := offsetLast
-    }
+    }otherwise(station.valid.clear())
   }
   val askRefresh = refreshStream.valid && readyForRefresh
   when(station.doSomething) {

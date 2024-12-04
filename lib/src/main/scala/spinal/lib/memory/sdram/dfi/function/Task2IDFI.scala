@@ -100,9 +100,9 @@ case class RdDataRxd(taskConfig: TaskConfig, dfiConfig: DfiConfig) extends Compo
       1 << log2Up((timeConfig.tPhyRdlat + timeConfig.tRddataEn + beatCount - 1) / beatCount + 1),
       latency = 1
     )
-
+    val rden = input.valid & ~input.write
     val rdensHistory = Vec(Vec(Bool(), (cmdPhase + timeConfig.tRddataEn) / frequencyRatio + 2), frequencyRatio)
-    rdensHistory.foreach(_ := History(input.valid, 0 to (cmdPhase + timeConfig.tRddataEn) / frequencyRatio + 1))
+    rdensHistory.foreach(_ := History(rden, 0 to (cmdPhase + timeConfig.tRddataEn) / frequencyRatio + 1))
     rdensHistory.foreach(_.tail.foreach(_ init (False)))
 
     val beatCounter = Counter(beatCount, io.idfiRdData.map(_.valid).orR)
@@ -133,7 +133,7 @@ case class RdDataRxd(taskConfig: TaskConfig, dfiConfig: DfiConfig) extends Compo
   val ready = Vec(Reg(Bool()), frequencyRatio)
 
   rspPipeline.input.valid := False
-  rspPipeline.input.write.assignDontCare()
+  rspPipeline.input.write.clear()
   rspPipeline.input.last := io.task.last
   rspPipeline.input.context := io.task.context
 
