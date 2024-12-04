@@ -221,7 +221,7 @@ case class BmbAlignedSpliter(ip: BmbParameter, lengthMax: Int) extends Component
     val context = Context()
     context.input := io.input.cmd.context
     context.last := lastSplit
-    context.write := io.input.cmd.isWrite
+    context.write := io.output.cmd.isWrite
     context.source := io.input.cmd.source
 
     io.output.cmd.valid := io.input.cmd.valid | ((rdBeatCounter === beatsInSplit - 1) & usedSplit)
@@ -261,14 +261,17 @@ case class BmbAlignedSpliter(ip: BmbParameter, lengthMax: Int) extends Component
       }
     }otherwise(rdBeatCounter.clearAll())
 
-    when((io.input.cmd.lastFire & io.input.cmd.isWrite) | (io.input.rsp.lastFire)) {
-      splitCounter := 0
+    when((io.input.cmd.lastFire & io.input.cmd.isWrite)) {
       firstSplit := True
+    }
+    when(io.output.cmd.lastFire & lastSplit){
+      splitCounter := 0
     }
   }
   val rspLogic = new Area {
     val context = io.output.rsp.context.as(Context())
-    io.input.rsp.arbitrationFrom(io.output.rsp)
+    io.input.rsp.valid := io.output.rsp.valid & (context.write ? context.last | True)
+    io.output.rsp.ready := io.input.rsp.ready
     io.input.rsp.last := io.output.rsp.last && context.last
     io.input.rsp.source := context.source
     io.input.rsp.opcode := io.output.rsp.opcode
