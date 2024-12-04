@@ -172,7 +172,7 @@ case class MakeTask(taskConfig: TaskConfig, dfiConfig: DfiConfig, addrMap: AddrM
     val offsetLast = offset + taskConstructor.input.length
     val canSpawn = !station.valid
     // Insert taskConstructor into one free station
-    when(taskConstructor.input.valid && canSpawn) {
+    when(taskConstructor.input.fire && canSpawn) {
       station.valid := True
       station.status := taskConstructor.status
       station.address.column := taskConstructor.address.column & columnBurstMask
@@ -181,7 +181,7 @@ case class MakeTask(taskConfig: TaskConfig, dfiConfig: DfiConfig, addrMap: AddrM
       station.context := taskConstructor.input.context
       station.offset := offset
       station.offsetLast := offsetLast
-    }otherwise(station.valid.clear())
+    }
   }
   val askRefresh = refreshStream.valid && readyForRefresh
   when(station.doSomething) {

@@ -79,7 +79,7 @@ class DfiControllerTester extends SpinalAnyFunSuite {
                val dut = DfiController(bmbp, task, dfiConfig, RowBankColumn)
                dut
              }
-             .doSimUntilVoid{ dut =>
+             .doSimUntilVoid(seed = 2117802787){ dut =>
                dut.clockDomain.forkStimulus(10,resetCycles = 16)
                fork {
                  sleep(160)

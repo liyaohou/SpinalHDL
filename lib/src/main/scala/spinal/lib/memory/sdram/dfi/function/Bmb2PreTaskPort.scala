@@ -26,7 +26,7 @@ case class BmbToPreTaskPort(ip: BmbParameter, taskConfig: TaskConfig, dfiConfig:
   cmdContext.context := io.input.cmd.context
   cmdContext.source := io.input.cmd.source
 
-  io.output.cmd.valid := io.input.cmd.firstFire
+  io.output.cmd.valid := io.input.cmd.lastFire
   io.output.cmd.write := io.input.cmd.isWrite
   io.output.cmd.address := io.input.cmd.address
   assert(widthOf(io.output.cmd.length) >= widthOf(io.input.cmd.length) - log2Up(bytePerBurst))
