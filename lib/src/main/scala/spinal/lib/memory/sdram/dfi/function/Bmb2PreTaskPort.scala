@@ -89,7 +89,7 @@ case class BmbAdapter(bmbp: BmbParameter, taskConfig: TaskConfig, dfiConfig: Dfi
     assert(taskParameter.rspBufferSize * bytePerBeat >= splitLength)
 
     val spliter = BmbAlignedSpliter(aligner.io.output.p, splitLength)
-    spliter.io.input << aligner.io.output
+    spliter.io.input << aligner.io.output.pipelined(cmdValid = true, cmdReady = true)
 
     val converter = BmbToPreTaskPort(spliter.io.output.p, taskConfig, dfiConfig)
     converter.io.input << spliter.io.output.pipelined(cmdValid = true)

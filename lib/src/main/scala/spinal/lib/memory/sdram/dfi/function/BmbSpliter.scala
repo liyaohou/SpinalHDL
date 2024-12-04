@@ -133,7 +133,7 @@ case class BmbAligner(ip: BmbParameter, alignmentWidth: Int) extends Component {
       io.input.rsp.source := context.source
 
       val forWrite = ip.access.canWrite generate new Area {
-        io.input.rsp.last clearWhen (context.write)
+        io.input.rsp.last.clearWhen(context.write).setWhen(io.output.rsp.lastFire)
       }
 
       val forRead = ip.access.canRead generate new Area {
@@ -154,7 +154,7 @@ case class BmbAligner(ip: BmbParameter, alignmentWidth: Int) extends Component {
           context.paddings.range
         ) < context.paddings || transferCounter > context.transfers))
 
-        io.input.rsp.last setWhen (transferCounter === context.transfers)
+        io.input.rsp.last setWhen (transferCounter === context.transfers & (transferCounter =/= 0))
         io.input.rsp.data := io.output.rsp.data
       }
 
@@ -219,7 +219,7 @@ case class BmbAlignedSpliter(ip: BmbParameter, lengthMax: Int) extends Component
     ))
 
     val context = Context()
-    context.input := io.input.cmd.context
+    context.input := io.input.cmd.fire ? io.input.cmd.context | RegNextWhen(io.input.cmd.context, io.input.cmd.fire)
     context.last := lastSplit
     context.write := io.output.cmd.isWrite
     context.source := io.input.cmd.source
