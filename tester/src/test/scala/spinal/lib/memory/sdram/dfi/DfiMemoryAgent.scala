@@ -86,6 +86,14 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
     if (bankQueue.nonEmpty) {
       bank = bankQueue.dequeue()
     }
+    var writeVaild: Boolean = false
+    var oneTakeDataCounter: Int = 0
+
+    var rdDataByte: Int = 0
+    var rdData: BigInt = 0
+    var rdByteAddress: Long = 0
+    var rdVaildPhase: Int = 0
+    rd.rd.foreach(_.rddataValid #= false)
     for (cs <- cke.zip(csN).map(t => t._1 && !t._2).zipWithIndex) {
       val active = cs._1 & !ras & cas & weN
       val write = cs._1 & ras & !cas & !weN
@@ -96,9 +104,8 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
         idQueue.enqueue(cs._2)
       }
 
-      // write
-      var writeVaild: Boolean = false
-      var oneTakeDataCounter: Int = 0
+      // write cmd
+
       if (write) {
         columnAddr = ctrl.address.toLong & (1 << columnWidth) - 1
         byteAddr =
@@ -115,30 +122,9 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
           oneTakeDataCounter = 0
         }
       }
-      for (i <- 0 until phaseCount) {
-        wrEnQueue.enqueue(wrEn(i))
 
-        if (wrEnQueue.length == busConfig.timeConfig.tPhyWrData + 1) {
-          writeVaild = wrEnQueue.dequeue()
-        }
-        if (writeVaild) {
-          for (j <- 0.until(busConfig.bytePerDq).reverse) {
-            wrByteQueue.enqueue((wrData(i) >> j * 8).toByte)
-          }
-          if (oneTakeDataCounter == oneTaskDataNumber) {
-            if (wProcess.nonEmpty) wProcess.dequeue() else null
-          } else {
-            oneTakeDataCounter = oneTakeDataCounter + 1
-          }
-        }
-      }
+      // read cmd
 
-      // read
-      var rdDataByte: Int = 0
-      var rdData: BigInt = 0
-      var rdByteAddress: Long = 0
-      var rdVaildPhase: Int = 0
-      rd.rd(rdVaildPhase).rddataValid #= false
       if (read) {
         columnAddr = ctrl.address.toLong & (1 << columnWidth) - 1
         byteAddr =
@@ -146,31 +132,55 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
             busConfig.sdram.bytePerWord
           )
         for (i <- (0 until (oneTaskDataNumber))) {
-          for (j <- 0 until (busConfig.bytePerDq)) {
-            rdByteAddress = byteAddr + i * busConfig.bytePerDq + j
+          for (j <- 0 until (busConfig.phyIoWidth / 8)) {
+            rdByteAddress = byteAddr + i * busConfig.phyIoWidth / 8 + j
             rdDataByte = getByteAsInt(rdByteAddress)
-            rdData |= (BigInt(rdDataByte) << (busConfig.bytePerDq - 1 - j) * 8)
+            rdData |= (BigInt(rdDataByte) << ((busConfig.phyIoWidth / 8 - 1 - j) * 8))
           }
           rdDataQueue.enqueue(rdData)
           rdData = 0
         }
       }
-//      for (((vaild, rdData), phase) <- rd.rd.map(t => (t.rddataValid, t.rddata)).zipWithIndex) {
-      for (phase <- 0 until (phaseCount)) {
-        if (rProcess(phase).nonEmpty & rdEnQueue.nonEmpty & rdDataQueue.nonEmpty) {
-          rdEnQueue.dequeue()
-          rProcess(phase).dequeue().apply(rdDataQueue.dequeue())
+    }
+    //write opcode
+    for (i <- 0 until phaseCount) {
+      wrEnQueue.enqueue(wrEn(i))
+
+      if (wrEnQueue.length == busConfig.timeConfig.tPhyWrData + 1) {
+        writeVaild = wrEnQueue.dequeue()
+      }
+      if (writeVaild) {
+        for (j <- 0.until(busConfig.bytePerDq).reverse) {
+          wrByteQueue.enqueue((wrData(i) >> j * 8).toByte)
+        }
+        if (oneTakeDataCounter == oneTaskDataNumber) {
+          if (wProcess.nonEmpty) wProcess.dequeue() else null
+        } else {
+          oneTakeDataCounter = oneTakeDataCounter + 1
         }
       }
-      for ((en, phase) <- rdEn.zipWithIndex) {
-        if (en) {
-          rdEnQueue.enqueue((true, phase))
-          rProcess(rdVaildPhase).enqueue { (bigInt: BigInt) =>
-            rd.rd(rdVaildPhase).rddataValid #= true
-            rd.rd(rdVaildPhase).rddata #= bigInt
+    }
+
+    //read opcode
+    //      for (((vaild, rdData), phase) <- rd.rd.map(t => (t.rddataValid, t.rddata)).zipWithIndex) {
+    for (phase <- 0 until (phaseCount)) {
+      if (rProcess(phase).nonEmpty & rdDataQueue.nonEmpty) {
+        rdEnQueue.dequeue()
+        rProcess(phase).dequeue().apply(rdDataQueue.dequeue())
+      }
+    }
+    for ((en, phase) <- rdEn.zipWithIndex) {
+      if (en) {
+        rdEnQueue.enqueue((true, phase))
+        for((process, i) <- rProcess.zipWithIndex){
+          if(i == rdVaildPhase) {
+            process.enqueue { (bigInt: BigInt) =>
+              rd.rd(i).rddataValid #= true
+              rd.rd(i).rddata #= bigInt
+            }
           }
-          rdVaildPhase = (rdVaildPhase + 1) % phaseCount
         }
+        rdVaildPhase = (rdVaildPhase + 1) % phaseCount
       }
     }
   }
