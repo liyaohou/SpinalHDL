@@ -88,8 +88,34 @@ class DfiControllerTester extends SpinalAnyFunSuite {
                  dut.clockDomain.deassertReset()
                }
                val memorySize = 1 << dut.io.bmb.p.access.addressWidth
+               val allowedWrites = mutable.HashMap[Long, Byte]()
+               val addrMap = dut.addrMap
+               val dfiMemoryAgent = new DfiMemoryAgent(dut.io.dfi, dut.clockDomain){
+                 override def setByte(address: Long, value: Byte): Unit = {
+                   val option = allowedWrites.get(address)
+//                   assert(option.isDefined)
+//                   assert(option.get == value)
+                   super.setByte(address, value)
+                   allowedWrites.remove(address)
+                 }
+               }
+
                val regions = BmbRegionAllocator(alignmentMinWidth = 6)
                val bmbAgent = new BmbMasterAgent(dut.io.bmb, dut.clockDomain){
+                 override def onRspRead(address: BigInt, data: Seq[Byte]): Unit = {
+                   val ref = (0 until data.length).map(i => dfiMemoryAgent.getByte(address.toLong + i))
+//                   if (ref != data) {
+//                     simFailure(s"Read mismatch on $master\n  REF=$ref\n  DUT=$data")
+//                   }
+                 }
+
+//                 override def getCmd(): () => Unit = if (cmdQueue.nonEmpty) super.getCmd() else null
+
+                 override def onCmdWrite(address: BigInt, data: Byte): Unit = {
+                   val addressLong = address.toLong
+//                   assert(!allowedWrites.contains(addressLong))
+                   allowedWrites(addressLong) = data
+                 }
                  override def regionAllocate(sizeMax: Int): SizeMapping = regions.allocate(Random.nextInt(memorySize) & ~((1<<regions.alignmentMinWidth)-1), sizeMax, dut.io.bmb.p)
                  override def regionFree(region: SizeMapping): Unit = regions.free(region)
                  override def regionIsMapped(region: SizeMapping, opcode: Int): Boolean = true
