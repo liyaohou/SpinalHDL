@@ -105,7 +105,6 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
       }
 
       // write cmd
-
       if (write) {
         columnAddr = ctrl.address.toLong & (1 << columnWidth) - 1
         byteAddr =
@@ -124,7 +123,6 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
       }
 
       // read cmd
-
       if (read) {
         columnAddr = ctrl.address.toLong & (1 << columnWidth) - 1
         byteAddr =
@@ -142,7 +140,7 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
         }
       }
     }
-    //write opcode
+    // write opcode
     for (i <- 0 until phaseCount) {
       wrEnQueue.enqueue(wrEn(i))
 
@@ -161,8 +159,7 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
       }
     }
 
-    //read opcode
-    //      for (((vaild, rdData), phase) <- rd.rd.map(t => (t.rddataValid, t.rddata)).zipWithIndex) {
+    // read opcode
     for (phase <- 0 until (phaseCount)) {
       if (rProcess(phase).nonEmpty & rdDataQueue.nonEmpty) {
         rdEnQueue.dequeue()
@@ -172,8 +169,8 @@ class DfiMemoryAgent(ctrl: DfiControlInterface, wr: DfiWriteInterface, rd: DfiRe
     for ((en, phase) <- rdEn.zipWithIndex) {
       if (en) {
         rdEnQueue.enqueue((true, phase))
-        for((process, i) <- rProcess.zipWithIndex){
-          if(i == rdVaildPhase) {
+        for ((process, i) <- rProcess.zipWithIndex) {
+          if (i == rdVaildPhase) {
             process.enqueue { (bigInt: BigInt) =>
               rd.rd(i).rddataValid #= true
               rd.rd(i).rddata #= bigInt
