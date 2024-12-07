@@ -109,7 +109,7 @@ class DfiControllerTester extends SpinalAnyFunSuite {
 //                   }
                  }
 
-//                 override def getCmd(): () => Unit = if (cmdQueue.nonEmpty) super.getCmd() else null
+                 override def getCmd(): () => Unit = if (cmdQueue.nonEmpty | rspQueue.map(_.isEmpty).reduce(_&_)) super.getCmd() else null
 
                  override def onCmdWrite(address: BigInt, data: Byte): Unit = {
                    val addressLong = address.toLong
